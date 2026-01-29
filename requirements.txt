@@ -1,0 +1,2 @@
+pip install streamlit torch torchvision pillow
+python -m streamlit run app.py
