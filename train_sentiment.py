@@ -22,20 +22,46 @@ df = df[df['label'].notna()]
 print(f"Valid labels: {len(df)} tweets")
 
 def apply_negation_handling(tokens):
-    """Handle negation by modifying tokens after negation words."""
+    """Handle negation by flipping sentiment of negated words."""
     negation_words = {"not", "no", "never", "neither", "nobody", "nothing", "nowhere", 
                       "isn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", 
                       "won't", "wouldn't", "can't", "couldn't", "shouldn't", "mightn't"}
+    
+    # Sentiment word mappings - flip to opposite
+    sentiment_flip = {
+        # Negative -> Positive
+        'bad': 'amazing', 'terrible': 'amazing', 'awful': 'amazing', 'horrible': 'amazing',
+        'poor': 'excellent', 'worst': 'best', 'delayed': 'ontime', 'late': 'ontime',
+        'angry': 'happy', 'sad': 'happy', 'disappointed': 'pleased', 'frustrated': 'satisfied',
+        'useless': 'excellent', 'broken': 'working', 'rude': 'polite', 'dirty': 'clean',
+        'uncomfortable': 'comfortable', 'crowded': 'spacious', 'disgusting': 'amazing',
+        'hate': 'love', 'annoying': 'delightful', 'boring': 'interesting',
+        # Positive -> Negative (symmetric)
+        'good': 'bad', 'amazing': 'terrible', 'excellent': 'poor', 'best': 'worst', 
+        'ontime': 'delayed', 'happy': 'angry', 'pleased': 'disappointed', 'satisfied': 'frustrated',
+        'working': 'broken', 'polite': 'rude', 'clean': 'dirty', 'comfortable': 'uncomfortable',
+        'spacious': 'crowded', 'love': 'hate', 'delightful': 'annoying', 'interesting': 'boring',
+    }
+    
     modified_tokens = []
     i = 0
     while i < len(tokens):
         if tokens[i] in negation_words and i + 1 < len(tokens):
-            modified_tokens.append(tokens[i])
-            modified_tokens.append("NOT_" + tokens[i + 1])
-            i += 2
+            next_word = tokens[i + 1]
+            # Try to flip the sentiment of the next word
+            if next_word in sentiment_flip:
+                modified_tokens.append(tokens[i])
+                modified_tokens.append(sentiment_flip[next_word])
+                i += 2
+            else:
+                # If not a known sentiment word, keep original with NOT_ prefix
+                modified_tokens.append(tokens[i])
+                modified_tokens.append("NOT_" + next_word)
+                i += 2
         else:
             modified_tokens.append(tokens[i])
             i += 1
+    
     return modified_tokens
 
 def preprocess_text(text):
@@ -44,7 +70,8 @@ def preprocess_text(text):
     text = text.lower()
     text = text.replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
     tokens = text.split()
-    tokens = [t.strip('.,!?;:') for t in tokens if t.strip('.,!?;:')]
+    # Strip punctuation from tokens
+    tokens = [t.strip('.,!?;:\'"') for t in tokens if t.strip('.,!?;:\'"')]
     tokens = apply_negation_handling(tokens)
     return tokens
 
