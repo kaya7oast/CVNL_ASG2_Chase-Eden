@@ -57,8 +57,30 @@ def load_resources():
 
 res = load_resources()
 
+def apply_negation_handling(tokens):
+    """Handle negation by modifying tokens after negation words."""
+    negation_words = {"not", "no", "never", "neither", "nobody", "nothing", "nowhere", "isn't", "aren't", "wasn't", "weren't", "don't", "doesn't", "didn't", "won't", "wouldn't", "can't", "couldn't", "shouldn't", "mightn't"}
+    modified_tokens = []
+    
+    for i, token in enumerate(tokens):
+        if token in negation_words and i + 1 < len(tokens):
+            # Add negation prefix to next word
+            modified_tokens.append(token)
+            modified_tokens.append("NOT_" + tokens[i + 1])
+            i += 1
+        elif i > 0 and tokens[i - 1] in negation_words:
+            # Skip - already handled in previous iteration
+            continue
+        else:
+            modified_tokens.append(token)
+    
+    return modified_tokens
+
 def preprocess_text_debug(text, vocab, max_len=20):
     tokens = text.lower().split()
+    # Apply negation handling for sentiment analysis
+    tokens = apply_negation_handling(tokens)
+    
     unk_id = vocab.get('<UNK>', 1)
     indices = []
     debug_tokens = []
